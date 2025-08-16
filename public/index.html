@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal de Noticias</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #dc143c;
+            --dark-gray: #2c2c2c;
+            --light-gray: #f8f9fa;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-red) 0%, #b91c3c 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.8rem;
+            color: var(--white) !important;
+        }
+
+        .hero-section {
+            background: linear-gradient(135deg, var(--dark-gray) 0%, #3a3a3a 100%);
+            color: var(--white);
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .hero-subtitle {
+            font-size: 1.3rem;
+            opacity: 0.9;
+        }
+
+        .category-filter {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 3rem;
+        }
+
+        .filter-btn {
+            background: var(--white);
+            border: 2px solid var(--primary-red);
+            color: var(--primary-red);
+            padding: 0.7rem 1.5rem;
+            margin: 0.3rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--primary-red);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 20, 60, 0.3);
+        }
+
+        .news-card {
+            background: var(--white);
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            height: 100%;
+            margin-bottom: 2rem;
+        }
+
+        .news-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        .news-card img {
+            height: 250px;
+            object-fit: cover;
+            width: 100%;
+        }
+
+        .news-card .card-body {
+            padding: 1.8rem;
+        }
+
+        .news-title {
+            color: var(--dark-gray);
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            line-height: 1.4;
+        }
+
+        .news-content {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+        }
+
+        .news-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+
+        .category-badge {
+            background: var(--primary-red);
+            color: var(--white);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .date-text {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .loading-spinner {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+
+        .spinner-border {
+            color: var(--primary-red);
+        }
+
+        .no-news {
+            text-align: center;
+            padding: 4rem 0;
+            color: #666;
+        }
+
+        .no-news i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: var(--primary-red);
+            opacity: 0.5;
+        }
+
+        .admin-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary-red);
+            color: var(--white);
+            padding: 15px;
+            border-radius: 50%;
+            text-decoration: none;
+            font-size: 1.2rem;
+            box-shadow: 0 5px 15px rgba(220, 20, 60, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .admin-link:hover {
+            background: #b91c3c;
+            color: var(--white);
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+            
+            .filter-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-newspaper me-2"></i>
+                El Contrapeso Informativo
+            </a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="hero-title">Las Últimas Noticias</h1>
+            <p class="hero-subtitle">Mantente informado con las noticias más relevantes del día</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Category Filter -->
+        <div class="category-filter">
+            <h3 class="text-center mb-4">
+                <i class="fas fa-filter me-2"></i>
+                Categorías
+            </h3>
+            <div class="text-center">
+                <button class="btn filter-btn active" data-category="todas">
+                    <i class="fas fa-globe me-1"></i>
+                    Todas
+                </button>
+                <button class="btn filter-btn" data-category="politica">
+                    <i class="fas fa-balance-scale me-1"></i>
+                    Política
+                </button>
+                <button class="btn filter-btn" data-category="deportes">
+                    <i class="fas fa-football-ball me-1"></i>
+                    Deportes
+                </button>
+                <button class="btn filter-btn" data-category="tecnologia">
+                    <i class="fas fa-microchip me-1"></i>
+                    Tecnología
+                </button>
+                <button class="btn filter-btn" data-category="economia">
+                    <i class="fas fa-chart-line me-1"></i>
+                    Economía
+                </button>
+                <button class="btn filter-btn" data-category="salud">
+                    <i class="fas fa-heartbeat me-1"></i>
+                    Salud
+                </button>
+                <button class="btn filter-btn" data-category="entretenimiento">
+                    <i class="fas fa-film me-1"></i>
+                    Entretenimiento
+                </button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading-spinner">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+
+        <!-- News Grid -->
+        <div id="news-container" class="row" style="display: none;">
+            <!-- News cards will be inserted here -->
+        </div>
+
+        <!-- No News Message -->
+        <div id="no-news" class="no-news" style="display: none;">
+            <i class="fas fa-newspaper"></i>
+            <h3>No se encontraron noticias</h3>
+            <p>No hay noticias disponibles para la categoría seleccionada.</p>
+        </div>
+    </div>
+
+    <!-- Admin Link -->
+    <a href="/admin" class="admin-link" title="Panel de Administración">
+        <i class="fas fa-cog"></i>
+    </a>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let currentCategory = 'todas';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadNews();
+            setupCategoryFilters();
+        });
+
+        function setupCategoryFilters() {
+            const filterButtons = document.querySelectorAll('.filter-btn');
+            
+            filterButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    // Remove active class from all buttons
+                    filterButtons.forEach(b => b.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    btn.classList.add('active');
+                    
+                    // Update current category and load news
+                    currentCategory = btn.dataset.category;
+                    loadNews();
+                });
+            });
+        }
+
+        async function loadNews() {
+            const loading = document.getElementById('loading');
+            const newsContainer = document.getElementById('news-container');
+            const noNews = document.getElementById('no-news');
+            
+            // Show loading, hide content
+            loading.style.display = 'flex';
+            newsContainer.style.display = 'none';
+            noNews.style.display = 'none';
+            
+            try {
+                const url = currentCategory === 'todas' 
+                    ? '/api/notas' 
+                    : `/api/notas?categoria=${currentCategory}`;
+                
+                const response = await fetch(url);
+                const news = await response.json();
+                
+                // Hide loading
+                loading.style.display = 'none';
+                
+                if (news.length === 0) {
+                    noNews.style.display = 'block';
+                } else {
+                    displayNews(news);
+                    newsContainer.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error loading news:', error);
+                loading.style.display = 'none';
+                noNews.style.display = 'block';
+            }
+        }
+
+        function displayNews(news) {
+            const container = document.getElementById('news-container');
+            container.innerHTML = '';
+            
+            news.forEach(article => {
+                const newsCard = createNewsCard(article);
+                container.appendChild(newsCard);
+            });
+        }
+
+        function createNewsCard(article) {
+            const col = document.createElement('div');
+            col.className = 'col-lg-4 col-md-6';
+            
+            const defaultImage = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjI1MCIgdmlld0JveD0iMCAwIDQwMCAyNTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMjUwIiBmaWxsPSIjZjhmOWZhIi8+CjxwYXRoIGQ9Ik0xNzUgMTAwSDIyNVYxNTBIMTc1VjEwMFoiIGZpbGw9IiNkYzE0M2MiLz4KPHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTUgMTBIMzVWMzBINVYxMFoiIGZpbGw9IiNkYzE0M2MiLz4KPC9zdmc+Cjx0ZXh0IHg9IjIwMCIgeT0iMTI1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM2NjY2NjYiPk5vdGljaWE8L3RleHQ+Cjwvc3ZnPg==';
+            
+            col.innerHTML = `
+                <div class="card news-card">
+                    <img src="${article.imagen || defaultImage}" 
+                         class="card-img-top" 
+                         alt="${article.Titulo}"
+                         onerror="this.src='${defaultImage}'">
+                    <div class="card-body">
+                        <h5 class="news-title">${article.Titulo}</h5>
+                        <p class="news-content">${article.Contenido.substring(0, 150)}...</p>
+                        <div class="news-meta">
+                            <span class="category-badge">${getCategoryName(article.categoria)}</span>
+                            <small class="date-text">
+                                <i class="fas fa-calendar me-1"></i>
+                                ${formatDate(article.FechaCreacion)}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return col;
+        }
+
+        function getCategoryName(category) {
+            const categories = {
+                'politica': 'Política',
+                'deportes': 'Deportes',
+                'tecnologia': 'Tecnología',
+                'economia': 'Economía',
+                'salud': 'Salud',
+                'entretenimiento': 'Entretenimiento'
+            };
+            return categories[category] || category;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('es-ES', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+    </script>
+</body>
+</html>
