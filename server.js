@@ -1,7 +1,6 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
 const path = require('path');
-const fs = require('fs').promises;
 require('dotenv').config();
 
 const app = express();
@@ -25,22 +24,9 @@ const dbConfig = {
 
 const pool = mysql.createPool(dbConfig);
 
-
-
 // Initialize database tables
 async function initDatabase() {
   try {
-    await pool.execute(`
-      CREATE TABLE IF NOT EXISTS usuarios (
-        ID INT AUTO_INCREMENT PRIMARY KEY,
-        nombre VARCHAR(100) NOT NULL,
-        email VARCHAR(100) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        rol ENUM('admin', 'usuario') DEFAULT 'usuario',
-        fechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-
     await pool.execute(`
       CREATE TABLE IF NOT EXISTS notas (
         ID INT AUTO_INCREMENT PRIMARY KEY,
@@ -51,20 +37,9 @@ async function initDatabase() {
         visible BOOLEAN DEFAULT TRUE,
         autorID INT,
         FechaCreacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (autorID) REFERENCES usuarios(ID)
+        fechaActualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       )
     `);
-
-    // Create default admin user if not exists
-    const [existingAdmin] = await pool.execute('SELECT * FROM usuarios WHERE email = ?', ['admin@news.com']);
-    if (existingAdmin.length === 0) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
-      await pool.execute(
-        'INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)',
-        ['Administrator', 'admin@news.com', hashedPassword, 'admin']
-      );
-    }
 
     console.log('Database initialized successfully');
   } catch (error) {
@@ -84,9 +59,8 @@ app.get('/api/notas', async (req, res) => {
   try {
     const { categoria } = req.query;
     let query = `
-      SELECT n.*, u.nombre as autor 
+      SELECT n.* 
       FROM notas n 
-      LEFT JOIN usuarios u ON n.autorID = u.ID 
       WHERE n.visible = TRUE
     `;
     const params = [];
@@ -110,7 +84,7 @@ app.get('/api/notas', async (req, res) => {
 app.get('/api/notas/:id', async (req, res) => {
   try {
     const [rows] = await pool.execute(
-      'SELECT n.*, u.nombre as autor FROM notas n LEFT JOIN usuarios u ON n.autorID = u.ID WHERE n.ID = ? AND n.visible = TRUE',
+      'SELECT n.* FROM notas n WHERE n.ID = ? AND n.visible = TRUE',
       [req.params.id]
     );
     
@@ -128,7 +102,7 @@ app.get('/api/notas/:id', async (req, res) => {
 // Initialize database and start server
 initDatabase().then(() => {
   app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Public Server running on port ${PORT}`);
   });
 }).catch(console.error);
 
