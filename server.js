@@ -59,7 +59,8 @@ app.get('/api/notas', async (req, res) => {
   try {
     const { categoria } = req.query;
     let query = `
-      SELECT n.* 
+      SELECT n.*, 
+      (SELECT COUNT(*) FROM nota_imagenes ni WHERE ni.notaID = n.ID) > 0 AS hasImages
       FROM notas n 
       WHERE n.visible = TRUE
     `;
@@ -97,6 +98,42 @@ app.get('/api/notas/:id', async (req, res) => {
     console.error('Error fetching news article:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
+});
+
+// Get first image for a note (used in card view)
+app.get('/api/notas/:id/imagenes', async (req, res) => {
+  try {
+    const firstOnly = req.query.first === 'true';
+    let query = 'SELECT imagen, mime_type FROM nota_imagenes WHERE notaID = ? ORDER BY orden';
+    
+    if (firstOnly) {
+      query += ' LIMIT 1';
+    }
+
+    const [rows] = await pool.execute(query, [req.params.id]);
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'No images found' });
+    }
+
+    if (firstOnly) {
+      const row = rows[0];
+      res.set('Content-Type', row.mime_type);
+      res.send(row.imagen);
+    } else {
+      res.json(rows.map(row => ({
+        data: row.imagen.toString('base64'),
+        mimeType: row.mime_type
+      })));
+    }
+  } catch (error) {
+    console.error('Error fetching images:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.get('/nota/:id', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'nota-detalle.html'));
 });
 
 // Initialize database and start server

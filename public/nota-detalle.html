@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle de Noticia - Portal de Noticias</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #dc143c;
+            --dark-gray: #2c2c2c;
+            --light-gray: #f8f9fa;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-red) 0%, #b91c3c 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+            font-size: 1.8rem;
+            color: var(--white) !important;
+        }
+
+        .back-btn {
+            background: var(--white);
+            border: 2px solid var(--primary-red);
+            color: var(--primary-red);
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-bottom: 2rem;
+        }
+
+        .back-btn:hover {
+            background: var(--primary-red);
+            color: var(--white);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(220, 20, 60, 0.3);
+        }
+
+        .article-container {
+            background: var(--white);
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 3rem;
+        }
+
+        .article-title {
+            color: var(--dark-gray);
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            line-height: 1.3;
+        }
+
+        .article-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .category-badge {
+            background: var(--primary-red);
+            color: var(--white);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .date-text {
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .article-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+        }
+
+        .article-content {
+            color: #333;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+
+        .gallery-image {
+            flex: 1 1 300px;
+            max-height: 250px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .gallery-image:hover {
+            transform: scale(1.02);
+        }
+
+        @media (max-width: 768px) {
+            .article-title {
+                font-size: 1.5rem;
+            }
+            
+            .article-content {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-newspaper me-2"></i>
+                El Contrapeso Informativo
+            </a>
+        </div>
+    </nav>
+
+    <!-- Article Content -->
+    <div class="container my-4">
+        <button class="back-btn" onclick="window.history.back()">
+            <i class="fas fa-arrow-left me-2"></i>
+            Volver a Noticias
+        </button>
+        
+        <div id="loading" class="text-center py-5">
+            <div class="spinner-border text-danger" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+        
+        <div id="article-container" class="article-container" style="display: none;">
+            <!-- Article content will be loaded here -->
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Get article ID from URL
+            const pathParts = window.location.pathname.split('/');
+            const articleId = pathParts[pathParts.length - 1];
+            
+            if (articleId) {
+                loadArticle(articleId);
+            } else {
+                window.location.href = '/';
+            }
+        });
+
+        async function loadArticle(id) {
+            const loading = document.getElementById('loading');
+            const articleContainer = document.getElementById('article-container');
+            
+            try {
+                // Fetch article data
+                const response = await fetch(`/api/notas/${id}`);
+                if (!response.ok) {
+                    throw new Error('Artículo no encontrado');
+                }
+                const article = await response.json();
+                
+                // Fetch images for this article
+                const imagesResponse = await fetch(`/api/notas/${id}/imagenes`);
+                const images = imagesResponse.ok ? await imagesResponse.json() : [];
+                
+                // Format date
+                const articleDate = new Date(article.FechaCreacion);
+                const formattedDate = articleDate.toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                // Get category name
+                const categoryNames = {
+                    'politica': 'Política',
+                    'deportes': 'Deportes',
+                    'tecnologia': 'Tecnología',
+                    'economia': 'Economía',
+                    'salud': 'Salud',
+                    'entretenimiento': 'Entretenimiento'
+                };
+                const categoryName = categoryNames[article.categoria] || article.categoria;
+                
+                // Build HTML
+                let imagesHTML = '';
+                if (images.length > 0) {
+                    imagesHTML = `
+                        <div class="image-gallery">
+                            ${images.map(img => `
+                                <img src="data:${img.mimeType};base64,${img.data}" 
+                                     class="gallery-image" 
+                                     alt="Imagen de la noticia">
+                            `).join('')}
+                        </div>
+                    `;
+                }
+                
+                articleContainer.innerHTML = `
+                    <div class="article-meta">
+                        <span class="category-badge">${categoryName}</span>
+                        <small class="date-text">
+                            <i class="fas fa-calendar me-1"></i>
+                            ${formattedDate}
+                        </small>
+                    </div>
+                    <h1 class="article-title">${article.Titulo}</h1>
+                    ${imagesHTML}
+                    <div class="article-content">
+                        ${article.Contenido.replace(/\n/g, '<br>')}
+                    </div>
+                `;
+                
+                loading.style.display = 'none';
+                articleContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error loading article:', error);
+                loading.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        No se pudo cargar el artículo. <a href="/">Volver al inicio</a>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
